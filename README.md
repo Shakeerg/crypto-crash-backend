@@ -1,231 +1,387 @@
-Crypto Crash Backend
-This is the backend for "Crypto Crash," an online crash game where players bet in USD, converted to cryptocurrency (BTC/ETH), and cash out before the game crashes. The project uses Node.js, Express, MongoDB, Socket.IO, and the CoinGecko API for real-time crypto prices.
-Setup Instructions
-Prerequisites
+Sure! Here's a professional and well-structured `README.md` file for your "Crypto Crash" backend project, incorporating the details you provided while maintaining a clear format with the appropriate headings.
+
+```markdown
+# Crypto Crash Backend
 
-Node.js (v18 or later)
-MongoDB (local or Atlas)
-Git
+A scalable backend for "Crypto Crash," a real-time multiplayer crash game where players bet in USD (converted to BTC/ETH) and cash out before the game crashes. Built with Node.js, Express, Socket.IO, and MongoDB, this project leverages the CoinGecko API for live cryptocurrency prices and ensures provably fair gameplay.
 
-Installation
+## Table of Contents
 
-Clone the repository:
-git clone <repository-url>
-cd crypto-crash-backend
+- [Project Overview](#project-overview)
+- [Features](#features)
+- [Tech Stack](#tech-stack)
+- [Setup Instructions](#setup-instructions)
+  - [Prerequisites](#prerequisites)
+  - [Installation](#installation)
+  - [Database Setup](#database-setup)
+  - [Running the Application](#running-the-application)
+- [API Endpoints](#api-endpoints)
+  - [Place a Bet](#place-a-bet)
+  - [Cash Out](#cash-out)
+  - [Check Player Balance](#check-player-balance)
+- [WebSocket Events](#websocket-events)
+  - [Emitted Events](#emitted-events)
+  - [Client-Sent Events](#client-sent-events)
+- [Provably Fair Crash Algorithm](#provably-fair-crash-algorithm)
+- [USD-to-Crypto Conversion](#usd-to-crypto-conversion)
+- [Development Workflow](#development-workflow)
+  - [Git Branching Strategy](#git-branching-strategy)
+  - [Commit Guidelines](#commit-guidelines)
+  - [Contributing](#contributing)
+- [Troubleshooting](#troubleshooting)
+  - [CORS Issues](#cors-issues)
+  - [Bet Placement Timing](#bet-placement-timing)
+- [License](#license)
 
+## Project Overview
 
-Install dependencies:
-npm install
+Crypto Crash is a real-time multiplayer betting game where players place bets in USD, converted to cryptocurrency (BTC/ETH), and aim to cash out before the multiplier crashes. The backend handles game logic, real-time updates via WebSocket, and persistent storage with MongoDB. The project ensures fairness through a provably fair crash algorithm and provides a seamless experience with live crypto price integration.
 
+## Features
 
-Create a .env file in the root directory:
-PORT=3000
-MONGODB_URI=mongodb://localhost:27017/crypto_crash
-COINGECKO_API_URL=https://api.coingecko.com/api/v3
+- **Real-Time Gameplay:** Manages game rounds (pending, active, crashed) with Socket.IO for low-latency updates.
+- **Betting and Cashout:** Supports USD-to-crypto conversion for bets and cashouts, with API and WebSocket interfaces.
+- **Provably Fair:** Implements a cryptographically secure crash point generation algorithm, verifiable by players.
+- **Multiplayer Support:** Broadcasts game events to all connected clients, enabling a multiplayer experience.
+- **Persistent Storage:** Stores game rounds, bets, and transactions in MongoDB with atomic balance updates.
+- **Live Crypto Prices:** Integrates CoinGecko API for real-time BTC/ETH prices, cached for performance.
 
-Replace MONGODB_URI with your MongoDB connection string if using MongoDB Atlas.
+## Tech Stack
 
-Populate the database with sample data:
-node src/scripts/populateDb.js
+- **Backend:** Node.js, Express.js
+- **Real-Time Communication:** Socket.IO
+- **Database:** MongoDB (with Mongoose)
+- **API Integration:** CoinGecko API (via Axios)
+- **Caching:** Node-Cache (for price caching)
+- **Development Tools:** Nodemon, http-server
 
-This creates 3 players (player1, player2, player3) with initial balances in BTC and ETH.
+## Setup Instructions
 
-Start the server:
-npm run dev
+### Prerequisites
 
-The server will run on http://localhost:3000.
+- **Node.js:** v18 or later
+- **MongoDB:** Local instance or MongoDB Atlas
+- **Git:** For version control and cloning the repository
+- **NPM:** For dependency management
 
+### Installation
 
-Running the WebSocket Client
+1. **Clone the Repository:**
 
-Serve test/websocketClient.html on http://localhost:8080/test/websocketClient.html using a simple HTTP server (e.g., http-server):
-npm install -g http-server
-http-server -p 8080
+   ```bash
+   git clone https://github.com/yourusername/crypto-crash-backend.git
+   cd crypto-crash-backend
+   ```
 
+2. **Switch to the Main Branch:** Ensure you're on the main branch:
 
-Open the URL in your browser to interact with the game.
+   ```bash
+   git checkout main
+   git pull origin main
+   ```
 
+3. **Install Dependencies:**
 
-API Endpoints
-Place a Bet
+   ```bash
+   npm install
+   ```
 
-URL: /api/game/bet
+4. **Configure Environment Variables:** Create a `.env` file in the project root:
 
-Method: POST
+   ```env
+   PORT=3000
+   MONGODB_URI=mongodb://localhost:27017/crypto_crash
+   COINGECKO_API_URL=https://api.coingecko.com/api/v3
+   ```
 
-Request Body:
-{
-  "playerId": "player1",
-  "usdAmount": 10,
-  "currency": "BTC",
-  "roundId": 55
-}
+   Replace `MONGODB_URI` with your MongoDB connection string if using MongoDB Atlas.
 
+   Ensure `.env` is added to `.gitignore` to prevent accidental commits of sensitive data.
 
-Response (Success):
-{
-  "cryptoAmount": 0.00016667,
-  "price": 60000
-}
+### Database Setup
 
+1. **Start MongoDB:** Ensure your MongoDB instance is running (e.g., `mongod` for a local instance).
 
-Response (Error):
-{ "error": "Invalid round" }
+2. **Populate Sample Data:** Run the provided script to seed the database with sample players (player1, player2, player3) and initial balances:
 
+   ```bash
+   node src/scripts/populateDb.js
+   ```
 
+### Running the Application
 
-Cash Out
+1. **Start the Backend Server:** Use nodemon for development with hot-reloading:
 
-URL: /api/game/cashout
+   ```bash
+   npm run dev
+   ```
 
-Method: POST
+   The server will run on `http://localhost:3000`.
 
-Request Body:
-{
-  "playerId": "player1",
-  "roundId": 55,
-  "multiplier": 1.5
-}
+2. **Serve the WebSocket Client:** Serve the frontend client (`test/websocketClient.html`) using http-server:
 
+   ```bash
+   npm install -g http-server
+   http-server -p 8080
+   ```
 
-Response (Success):
-{
-  "payoutCrypto": 0.000250005,
-  "payoutUsd": 15
-}
+   Access the client at `http://localhost:8080/test/websocketClient.html`.
 
+## API Endpoints
 
-Response (Error):
-{ "error": "Round not active" }
+### Place a Bet
 
+- **Endpoint:** `/api/game/bet`
+- **Method:** `POST`
+- **Request Body:**
 
+   ```json
+   {
+     "playerId": "player1",
+     "usdAmount": 10,
+     "currency": "BTC",
+     "roundId": 55
+   }
+   ```
 
-Check Player Balance
+- **Success Response (200):**
 
-URL: /api/game/balance/:playerId
+   ```json
+   {
+     "cryptoAmount": 0.00016667,
+     "price": 60000
+   }
+   ```
 
-Method: GET
+- **Error Response (400):**
 
-Example: /api/game/balance/player1
+   ```json
+   { "error": "Invalid round" }
+   ```
 
-Response (Success):
-{
-  "playerId": "player1",
-  "balances": [
-    { "currency": "BTC", "cryptoAmount": 0.1, "usdEquivalent": 6000 },
-    { "currency": "ETH", "cryptoAmount": 2, "usdEquivalent": 5000 }
-  ]
-}
+### Cash Out
 
+- **Endpoint:** `/api/game/cashout`
+- **Method:** `POST`
+- **Request Body:**
 
-Response (Error):
-{ "error": "Player not found" }
+   ```json
+   {
+     "playerId": "player1",
+     "roundId": 55,
+     "multiplier": 1.5
+   }
+   ```
 
+- **Success Response (200):**
 
+   ```json
+   {
+     "payoutCrypto": 0.000250005,
+     "payoutUsd": 15
+   }
+   ```
 
-WebSocket Events
+- **Error Response (400):**
 
-roundStart
+   ```json
+   { "error": "Round not active" }
+   ```
 
-Payload: { "roundId": 55, "status": "pending" }
+### Check Player Balance
 
+- **Endpoint:** `/api/game/balance/:playerId`
+- **Method:** `GET`
+- **Example:** `/api/game/balance/player1`
+- **Success Response (200):**
 
-multiplierUpdate
+   ```json
+   {
+     "playerId": "player1",
+     "balances": [
+       { "currency": "BTC", "cryptoAmount": 0.1, "usdEquivalent": 6000 },
+       { "currency": "ETH", "cryptoAmount": 2, "usdEquivalent": 5000 }
+     ]
+   }
+   ```
 
-Payload: { "multiplier": 1.01 }
+- **Error Response (404):**
 
+   ```json
+   { "error": "Player not found" }
+   ```
 
-playerCashout
+## WebSocket Events
 
-Payload:{
-  "playerId": "player1",
-  "multiplier": 1.5,
-  "payoutUsd": 15
-}
+### Emitted Events
 
+- **roundStart:**
 
+   **Payload:**
 
+   ```json
+   { "roundId": 55, "status": "pending" }
+   ```
 
-roundCrash
+- **multiplierUpdate:**
 
-Payload: { "crashPoint": 2.5 }
+   **Payload:**
 
+   ```json
+   { "multiplier": 1.01 }
+   ```
 
-error
+- **playerCashout:**
 
-Payload: { "message": "Round not active" }
+   **Payload:**
 
+   ```json
+   {
+     "playerId": "player1",
+     "multiplier": 1.5,
+     "payoutUsd": 15
+   }
+   ```
 
+- **roundCrash:**
 
-Sending a Cashout Request
+   **Payload:**
 
-Event: cashout
-Payload: { "playerId": "player1", "roundId": 55 }
+   ```json
+   { "crashPoint": 2.5 }
+   ```
 
+- **error:**
 
+   **Payload:**
 
-Provably Fair Crash Algorithm
-The crash point is generated using a cryptographically secure method to ensure fairness:
+   ```json
+   { "message": "Round not active" }
+   ```
 
-Generate a random 4-byte value using crypto.randomBytes(4).
-Convert it to an integer: h = parseInt(randomBytes.toString('hex'), 16).
-Compute the crash point: e = 2^32, crashPoint = (e - h) / (e - 1) * 100, with a minimum of 1x.
-The seed, hash, and crash point are stored in the database for transparency.
-Players can verify the crash point using the verifyCrashPoint function in provablyFair.js.
+### Client-Sent Events
 
-USD-to-Crypto Conversion Logic
-Bet Placement:
+- **cashout:**
 
-Fetch the current price of the chosen cryptocurrency (BTC/ETH) from CoinGecko.
-Cache the price for 10 minutes to avoid rate limits.
-Convert USD to crypto: cryptoAmount = usdAmount / price.
+   **Payload:**
 
-Example: $10 bet with BTC at $60,000 → 10 / 60000 = 0.00016667 BTC.
-Cashout:
+   ```json
+   { "playerId": "player1", "roundId": 55 }
+   ```
 
-Calculate USD payout: payoutUsd = bet.usdAmount * multiplier.
-Convert to crypto: payoutCrypto = payoutUsd / currentPrice.
+## Provably Fair Crash Algorithm
 
-Example: Cashout at 2x with a $10 bet, BTC at $60,000 → $10 * 2 = $20, then 20 / 60000 = 0.00033334 BTC.
-Approach Overview
-Game Logic:
+The game ensures fairness through a provably fair crash point generation algorithm:
 
-A game loop runs on the server, managing round states (pending, active, crashed) and emitting updates via WebSocket.
-MongoDB stores game rounds, player bets, and transactions.
+1. Generate a random 4-byte value: `crypto.randomBytes(4)`.
+2. Convert to an integer: `h = parseInt(randomBytes.toString('hex'), 16)`.
+3. Compute the crash point: `e = 2^32`, `crashPoint = (e - h) / (e - 1) * 100`, with a minimum of 1x.
+4. Store the seed, hash, and crash point in MongoDB for transparency.
+5. Verify the crash point using `verifyCrashPoint` in `provablyFair.js`.
 
-Crypto Integration:
+## USD-to-Crypto Conversion
 
-CoinGecko API provides real-time prices, cached for 10 minutes.
-Simulated wallets store crypto balances, updated atomically at the document level.
+### Bet Placement
 
-WebSockets:
+1. Fetch the current cryptocurrency price (BTC/ETH) from CoinGecko.
+2. Cache the price for 10 minutes to avoid rate limits.
+3. Convert USD to crypto: `cryptoAmount = usdAmount / price`.
 
-Socket.IO broadcasts game events to all clients, ensuring a real-time multiplayer experience.
-Cashout requests are handled via WebSocket for low latency.
+   **Example:** $10 bet with BTC at $60,000 → `10 / 60000 = 0.00016667 BTC`.
 
-Challenges:
+### Cashout
 
-Fixed CORS issues by adding the cors middleware.
-Ensured bet placement only occurs during the pending phase, with guidance on timing in the README.
+1. Calculate USD payout: `payoutUsd = bet.usdAmount * multiplier`.
+2. Convert to crypto: `payoutCrypto = payoutUsd / currentPrice`.
 
-Troubleshooting
-Handling Failed to Fetch Error
-Add CORS middleware to Express in server.js:
-const cors = require('cors');
-app.use(cors({
-  origin: 'http://localhost:8080',
-  methods: ['GET', 'POST'],
-  credentials: true
-}));
+   **Example:** Cashout at 2x with a $10 bet, BTC at $60,000 → `$10 * 2 = $20`, then `20 / 60000 = 0.00033334 BTC`.
 
-Install the cors package:
-npm install cors
+## Development Workflow
 
-Handling Bet Placement Timing
-Bets can only be placed during the pending phase, which lasts 10 seconds at the start of each round. 
+### Git Branching Strategy
 
-Monitor the client UI for Status: pending or server logs for Round X started with status: pending.
-If you miss the pending phase, wait for the next round (approximately 15–125 seconds, depending on the crash point).
+This project follows a Gitflow-inspired branching model:
 
-License
-This project is licensed under the MIT License - see the LICENSE file for details.
+- **Main Branch (main):** Stable, production-ready code. All features are merged here via pull requests.
+- **Feature Branches (feature/*):** Used for new features or bug fixes (e.g., `feature/add-cashout-api`).
+- **Hotfix Branches (hotfix/*):** For urgent fixes to `main` (e.g., `hotfix/cors-issue`).
+
+### Workflow:
+
+1. Create a feature branch:
+
+   ```bash
+   git checkout -b feature/<feature-name>
+   ```
+
+2. Commit changes (see guidelines below).
+3. Push the branch and create a pull request:
+
+   ```bash
+   git push origin feature/<feature-name>
+   ```
+
+4. Merge into main after review.
+
+### Commit Guidelines
+
+Adhere to conventional commits for clarity:
+
+- **Format:** `<type>(<scope>): <description>`
+- **Types:** feat, fix, docs, chore, test.
+
+**Example:** `feat(api): add cashout endpoint`.
+
+### Examples:
+
+```bash
+git commit -m "feat(betting): implement bet placement endpoint"
+git commit -m "fix(websocket): resolve cashout sync issue"
+git commit -m "docs(readme): update setup instructions"
+```
+
+### Contributing
+
+1. Fork the repository (if you are an external contributor).
+2. Clone and create a feature branch (as above).
+3. Follow the setup instructions.
+4. Make changes, adhering to commit guidelines.
+5. Push the branch and create a pull request against `main`.
+6. Ensure all tests pass (if tests are added in the future).
+
+## Troubleshooting
+
+### CORS Issues
+
+If you encounter "Failed to Fetch" errors due to CORS:
+
+1. Add CORS middleware in `server.js`:
+
+   ```javascript
+   const cors = require('cors');
+   app.use(cors({
+     origin: 'http://localhost:8080',
+     methods: ['GET', 'POST'],
+     credentials: true
+   }));
+   ```
+
+2. Install the CORS package:
+
+   ```bash
+   npm install cors
+   ```
+
+### Bet Placement Timing
+
+Bets are only allowed during the pending phase (10 seconds at the start of each round):
+
+- Monitor the client UI for **Status: pending** or server logs for **Round X started with status: pending**.
+- If the pending phase is missed, wait for the next round (15–125 seconds, depending on the crash point).
+
+## License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for more information.
+```
+
+This `README.md` provides comprehensive coverage of the project's features, setup instructions, API documentation, and development workflow, ensuring clarity and professionalism. Replace `yourusername` in the repository URL with your GitHub username or the actual repository location, and feel free to adjust any details as necessary!
