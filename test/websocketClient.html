@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Crypto Crash</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.0/socket.io.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #0f0f0f;
+      --accent: #4caf50;
+      --danger: #ff4500;
+      --light: #ffffff;
+      --bg: #1e1e2f;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Orbitron', sans-serif;
+      background: linear-gradient(135deg, #0d0d0d, #1c1c2e);
+      color: var(--light);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 30px;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      margin-bottom: 20px;
+      background: linear-gradient(to right, #4caf50, #00ffd5);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.05);
+      padding: 20px;
+      border-radius: 12px;
+      width: 100%;
+      max-width: 500px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    }
+
+    #gameInfo p {
+      margin: 10px 0;
+      font-size: 1.1rem;
+    }
+
+    #multiplier {
+      font-size: 1.8rem;
+      color: lime;
+      animation: pulse 1s infinite;
+    }
+
+    #pendingTimer {
+      font-size: 1.2rem;
+      color: var(--danger);
+      font-weight: bold;
+      margin-top: 10px;
+    }
+
+    .button-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+      justify-content: center;
+    }
+
+    button {
+      padding: 12px 24px;
+      font-size: 1rem;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      background-color: var(--accent);
+      color: var(--light);
+      transition: background-color 0.3s ease, transform 0.2s ease;
+    }
+
+    button:hover:not(:disabled) {
+      background-color: #45a049;
+      transform: translateY(-2px);
+    }
+
+    button:disabled {
+      background-color: #555;
+      cursor: not-allowed;
+    }
+
+    #cashoutMessages {
+      margin-top: 20px;
+      max-height: 200px;
+      overflow-y: auto;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 15px;
+      border-radius: 10px;
+    }
+
+    #cashoutMessages p {
+      margin: 5px 0;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+
+    @media (max-width: 600px) {
+      .button-row {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>Crypto Crash</h1>
+
+  <div class="card" id="gameInfo">
+    <p>🎮 Round ID: <span id="roundId">N/A</span></p>
+    <p>📊 Status: <span id="status">N/A</span></p>
+    <p>🚀 Multiplier: <span id="multiplier">N/A</span></p>
+    <p id="pendingTimer"></p>
+  </div>
+
+  <div class="button-row">
+    <button id="betButton" onclick="placeBet()">💸 Place Bet</button>
+    <button id="cashoutButton" onclick="cashout()" disabled>💥 Cash Out</button>
+  </div>
+
+  <div id="cashoutMessages" class="card"></div>
+
+  <script>
+    const socket = io('http://localhost:3000', {
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000
+    });
+
+    const playerId = 'player1';
+    let roundId = 0;
+    let hasBet = false;
+    let timerInterval = null;
+
+    socket.on('connect', async () => {
+      console.log('Connected to WebSocket server');
+      try {
+        const response = await fetch('http://localhost:3000/api/game/currentRound');
+        const result = await response.json();
+        if (response.ok) {
+          roundId = result.roundId || 0;
+          updateGameInfo(result);
+        } else {
+          console.error('Failed to fetch current round:', result.error);
+        }
+      } catch (error) {
+        console.error('Error fetching current round:', error);
+      }
+    });
+
+    socket.on('roundStart', ({ roundId: id, status }) => {
+      roundId = id;
+      hasBet = false;
+      updateGameInfo({ roundId: id, status, multiplier: null });
+      if (status === 'pending') startPendingTimer();
+      else clearTimer();
+    });
+
+    socket.on('multiplierUpdate', ({ multiplier }) => {
+      document.getElementById('multiplier').textContent = multiplier.toFixed(2);
+    });
+
+    socket.on('roundCrash', ({ crashPoint }) => {
+      document.getElementById('status').textContent = `💥 Crashed at ${crashPoint.toFixed(2)}x`;
+      clearTimer();
+      document.getElementById('cashoutButton').disabled = true;
+      hasBet = false;
+    });
+
+    socket.on('playerCashout', ({ playerId: pId, multiplier, payoutUsd }) => {
+      const msg = `${pId} 💸 cashed out at ${multiplier.toFixed(2)}x → $${payoutUsd.toFixed(2)}`;
+      const msgDiv = document.createElement('p');
+      msgDiv.textContent = msg;
+      document.getElementById('cashoutMessages').appendChild(msgDiv);
+      document.getElementById('cashoutMessages').scrollTop = document.getElementById('cashoutMessages').scrollHeight;
+
+      if (pId === playerId) {
+        hasBet = false;
+        document.getElementById('cashoutButton').disabled = true;
+      }
+    });
+
+    function updateGameInfo(data) {
+      document.getElementById('roundId').textContent = data.roundId || 'N/A';
+      document.getElementById('status').textContent = data.status || 'N/A';
+      document.getElementById('multiplier').textContent = data.multiplier ? data.multiplier.toFixed(2) : 'N/A';
+      document.getElementById('betButton').disabled = data.status !== 'pending';
+      document.getElementById('cashoutButton').disabled = true;
+    }
+
+    function clearTimer() {
+      clearInterval(timerInterval);
+      document.getElementById('pendingTimer').textContent = '';
+    }
+
+    function startPendingTimer() {
+      let timeLeft = 10;
+      document.getElementById('pendingTimer').textContent = `⌛ Time to bet: ${timeLeft}s`;
+      timerInterval = setInterval(() => {
+        timeLeft--;
+        document.getElementById('pendingTimer').textContent = `⌛ Time to bet: ${timeLeft}s`;
+        if (timeLeft <= 0) clearTimer();
+      }, 1000);
+    }
+
+    async function placeBet() {
+      if (document.getElementById('status').textContent !== 'pending') {
+        return alert('❌ Can only bet during pending phase.');
+      }
+      if (hasBet) {
+        return alert('❌ Bet already placed.');
+      }
+      if (roundId === 0) {
+        return alert('❌ No active round.');
+      }
+
+      try {
+        const response = await fetch('http://localhost:3000/api/game/bet', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ playerId, usdAmount: 10, currency: 'BTC', roundId })
+        });
+        const result = await response.json();
+        if (response.ok) {
+          hasBet = true;
+          document.getElementById('cashoutButton').disabled = false;
+          document.getElementById('betButton').disabled = true;
+        } else {
+          alert('❌ Bet failed: ' + result.error);
+        }
+      } catch (error) {
+        alert('❌ Network error: ' + error.message);
+      }
+    }
+
+    function cashout() {
+      if (!hasBet || roundId === 0) {
+        return alert('❌ No active bet to cash out.');
+      }
+      socket.emit('cashout', { playerId, roundId });
+    }
+  </script>
+</body>
+</html>
