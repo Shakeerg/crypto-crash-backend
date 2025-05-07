@@ -29,7 +29,7 @@ A scalable backend for "Crypto Crash," a real-time multiplayer crash game where 
 - [Troubleshooting](#troubleshooting)
   - [CORS Issues](#cors-issues)
   - [Bet Placement Timing](#bet-placement-timing)
-- [License](#license)
+
 
 ## Project Overview
 
@@ -376,10 +376,5 @@ Bets are only allowed during the pending phase (10 seconds at the start of each 
 
 - Monitor the client UI for **Status: pending** or server logs for **Round X started with status: pending**.
 - If the pending phase is missed, wait for the next round (15–125 seconds, depending on the crash point).
-
-## License
-
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for more information.
-```
 
 This `README.md` provides comprehensive coverage of the project's features, setup instructions, API documentation, and development workflow, ensuring clarity and professionalism. Replace `yourusername` in the repository URL with your GitHub username or the actual repository location, and feel free to adjust any details as necessary!
