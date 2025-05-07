@@ -1,4 +1,4 @@
-```markdown
+
 # Crypto Crash Backend
 
 This is the backend for "Crypto Crash," an online crash game where players bet in USD, converted to cryptocurrency (BTC/ETH), and cash out before the game crashes. The project uses Node.js, Express, MongoDB, Socket.IO, and the CoinGecko API for real-time crypto prices.
