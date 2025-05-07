@@ -1,6 +1,4 @@
-Sure! Here's a professional and well-structured `README.md` file for your "Crypto Crash" backend project, incorporating the details you provided while maintaining a clear format with the appropriate headings.
 
-```markdown
 # Crypto Crash Backend
 
 A scalable backend for "Crypto Crash," a real-time multiplayer crash game where players bet in USD (converted to BTC/ETH) and cash out before the game crashes. Built with Node.js, Express, Socket.IO, and MongoDB, this project leverages the CoinGecko API for live cryptocurrency prices and ensures provably fair gameplay.
