@@ -88,7 +88,7 @@ Crypto Crash is a real-time multiplayer betting game where players place bets in
 
    ```env
    PORT=3000
-   MONGODB_URI=mongodb://localhost:27017/crypto_crash
+   MONGODB_URI=<your-mongodb-connection-string>
    COINGECKO_API_URL=https://api.coingecko.com/api/v3
    ```
 
