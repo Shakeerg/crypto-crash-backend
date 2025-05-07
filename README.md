@@ -1,3 +1,4 @@
+<HEAD
 Crypto Crash Backend
 
 This is the backend for "Crypto Crash," an online crash game where players bet in USD, converted to cryptocurrency (BTC/ETH), and cash out before the game crashes. The project uses Node.js, Express, MongoDB, Socket.IO, and the CoinGecko API for real-time crypto prices.
@@ -447,3 +448,6 @@ Monitor the client UI for Status: pending or server logs for Round X started wit
 
 
 If you miss the pending phase, wait for the next round (approximately 15–125 seconds, depending on the crash point).
+=======
+# crypto-crash-backend
+>>>>>>> b11baf3645222eacf0c36a587d2c7b335e3a960b
