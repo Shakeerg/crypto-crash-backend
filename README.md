@@ -259,4 +259,3 @@ Bets can only be placed during the pending phase, which lasts 10 seconds at the 
 
 ```
 
-Make sure to replace `<repository-url>` with the actual URL of your Git repository. This structure ensures that all necessary information is easy to access and understand while also maintaining a logical flow for users who are setting up or using the backend.
